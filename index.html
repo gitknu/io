@@ -163,7 +163,7 @@
     #lock-ui-wrapper {
         display: flex; flex-direction: column; width: 100%; align-items: center;
         margin: 5px 0;
-        position: relative; /* Context for hidden input */
+        position: relative; 
     }
 
     #ghost-input {
@@ -172,7 +172,7 @@
         top: 0; left: 0;
         width: 100%; height: 100%;
         z-index: 10;
-        pointer-events: none; /* Let drag pass through to JS handler, we manage focus manually */
+        pointer-events: none; /* Let drag pass through to JS handler */
     }
 
     #lock-container {
@@ -204,11 +204,11 @@
         position: relative;
         overflow: hidden;
         box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
-        touch-action: none; /* Crucial for custom drag */
+        touch-action: none; 
         transition: border-color 0.2s;
     }
     
-    /* 3D Cylinder Effect Gradient */
+    /* 3D Cylinder Effect */
     .lock-roller::before {
         content: ''; position: absolute; top:0; left:0; right:0; height: 12px;
         background: linear-gradient(to bottom, rgba(0,0,0,0.2), transparent);
@@ -223,7 +223,6 @@
     .lock-roller:active { cursor: grabbing; border-color: var(--color-attention-med); }
     .lock-roller span { z-index: 1; pointer-events: none; transform: translateZ(0); }
 
-    /* Arrow indicators */
     .lock-arrow-row {
         display: flex; justify-content: center; gap: 4px; width: 100%;
         color: #999; margin: 2px 0;
@@ -239,40 +238,44 @@
     .arrow-icon svg { width: 16px; height: 16px; stroke-width: 3px; }
 
 
-    /* --- QR SCANNER (CENTERED & SIZED) --- */
+    /* --- QR SCANNER (Corrected for Visibility) --- */
     #reader {
         width: 100%;
         max-width: 300px;
-        aspect-ratio: 1/1; 
-        margin: 5px auto;
-        border-radius: 0.8rem; 
-        overflow: hidden; 
+        margin: 0 auto 5px auto;
         background: #000;
-        border: 2px solid var(--color-attention-med); 
-        flex-shrink: 1;
-        min-height: 250px; 
-        max-height: 35vh; 
-        position: relative;
-        display: flex; align-items: center; justify-content: center;
+        border: 2px solid var(--color-attention-med);
+        border-radius: 10px;
+        overflow: hidden;
+        min-height: 250px;
+        /* Removed flex to allow library to render naturally */
     }
     
-    /* FIX: Force video to fill container without breaking aspect ratio constraints of the lib */
+    /* Ensure the library video takes space */
     #reader video { 
-        width: 100% !important; 
-        height: 100% !important; 
-        object-fit: cover !important; 
-        border-radius: 0.6rem !important;
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+        display: block;
     }
     
-    #html5-qrcode-button-camera-stop, #html5-qrcode-anchor-scan-type-change, #reader__dashboard_section_csr span { display: none !important; }
-    
-    #reader button {
-        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background-color: var(--color-attention-high) !important; color: white !important;
-        border: none !important; padding: 10px 20px !important; border-radius: 0.5rem !important;
-        font-family: 'Montserrat', sans-serif !important; font-weight: 600 !important; white-space: nowrap; z-index: 100;
+    /* Style the Start/Permission button from the library */
+    #reader__dashboard_section_csr button {
+        background-color: var(--color-attention-high) !important;
+        color: white !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700 !important;
+        margin: 20px auto !important;
+        display: block !important;
+        cursor: pointer;
     }
 
+    /* Hide extraneous library links */
+    #html5-qrcode-anchor-scan-type-change { display: none !important; }
+    
     /* --- QR GENERATOR --- */
     #qr-container {
         background:white; padding:5px; display:inline-flex; 
@@ -826,7 +829,6 @@
         const inp = document.getElementById('ghost-input');
         if(inp) {
             inp.focus();
-            // Optional: highlight container to show active state
             document.getElementById('lock-container').classList.add('focused');
         }
     }
@@ -880,16 +882,10 @@
 
         el.addEventListener('touchmove', (e) => {
             if(!isDragging) return;
-            // Note: We do NOT preventDefault here if we want the click to eventually fire, 
-            // but we need to stop page scroll.
-            // However, to distinguish tap from scroll:
-            
             const delta = startY - e.touches[0].clientY;
             if (Math.abs(delta) > 5) {
-                // If moved more than 5px, it's a drag, not a tap
                  e.preventDefault(); 
             }
-            
             if (Math.abs(delta) > sensitivity) {
                 const direction = delta > 0 ? 1 : -1;
                 changeDigit(index, direction);
@@ -897,16 +893,13 @@
             }
         }, {passive: false});
 
-        el.addEventListener('touchend', (e) => { 
-            isDragging = false;
-        });
+        el.addEventListener('touchend', (e) => { isDragging = false; });
 
         // Mouse events (Desktop simulation)
         el.addEventListener('mousedown', (e) => {
             startY = e.clientY;
             isDragging = true;
             el.style.cursor = 'grabbing';
-            // If mouse doesn't move, onclick on parent handles focus
         });
         window.addEventListener('mousemove', (e) => {
             if(!isDragging) return;
@@ -1129,11 +1122,10 @@
             if(html5QrcodeScanner) { 
                 try { html5QrcodeScanner.clear(); } catch(e){} 
             }
-            // Use specific config to avoid black squares on some devices
+            // Removed aspectRatio constraint to fix camera visibility issues
             html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
                 fps: 10, 
                 qrbox: { width: 200, height: 200 },
-                aspectRatio: 1.0,
                 showTorchButtonIfSupported: true
             }, false);
             
